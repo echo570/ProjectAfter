@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { INTERESTS_LIST } from "@shared/schema";
 import { X } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface InterestsSelectorProps {
   onSelect: (interests: string[]) => void;
@@ -11,6 +11,30 @@ interface InterestsSelectorProps {
 
 export function InterestsSelector({ onSelect, isLoading = false }: InterestsSelectorProps) {
   const [selected, setSelected] = useState<string[]>([]);
+  const [interestsList, setInterestsList] = useState<string[]>([]);
+  const [listLoading, setListLoading] = useState(true);
+
+  useEffect(() => {
+    loadInterests();
+  }, []);
+
+  const loadInterests = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/interests");
+      const data = await response.json();
+      setInterestsList(data.interests || []);
+    } catch (error) {
+      console.error("Failed to load interests", error);
+      // Fallback to default interests
+      setInterestsList([
+        'Gaming', 'Music', 'Movies', 'Sports', 'Travel', 'Tech', 'Art', 'Books',
+        'Fitness', 'Food', 'Photography', 'Cooking', 'Fashion', 'DIY', 'Pets',
+        'Crypto', 'Business', 'Science', 'History', 'Comedy',
+      ]);
+    } finally {
+      setListLoading(false);
+    }
+  };
 
   const handleToggle = (interest: string) => {
     if (selected.includes(interest)) {
@@ -36,7 +60,7 @@ export function InterestsSelector({ onSelect, isLoading = false }: InterestsSele
       </div>
 
       <div className="flex flex-wrap gap-3">
-        {INTERESTS_LIST.map((interest) => (
+        {interestsList.map((interest) => (
           <button
             key={interest}
             onClick={() => handleToggle(interest)}

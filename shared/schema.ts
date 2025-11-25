@@ -6,7 +6,7 @@ import { z } from "zod";
 export type UserStatus = 'idle' | 'waiting' | 'in-chat';
 export type ChatSessionStatus = 'active' | 'ended';
 
-export const INTERESTS_LIST = [
+export const DEFAULT_INTERESTS = [
   'Gaming',
   'Music',
   'Movies',
@@ -28,6 +28,8 @@ export const INTERESTS_LIST = [
   'History',
   'Comedy',
 ];
+
+export let INTERESTS_LIST = [...DEFAULT_INTERESTS];
 
 export const chatSessions = pgTable("chat_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -79,7 +81,27 @@ export interface OnlineStats {
   inChat: number;
 }
 
+export interface Admin {
+  id: string;
+  username: string;
+  passwordHash: string;
+}
+
+export interface AdminSession {
+  id: string;
+  adminId: string;
+  token: string;
+  expiresAt: number;
+}
+
 export interface WebSocketMessage {
   type: 'find-match' | 'message' | 'typing' | 'match' | 'end' | 'partner-disconnected' | 'offer' | 'answer' | 'ice-candidate' | 'set-interests';
   data?: any;
 }
+
+export const adminLoginSchema = z.object({
+  username: z.string().min(1),
+  password: z.string().min(1),
+});
+
+export type AdminLogin = z.infer<typeof adminLoginSchema>;
