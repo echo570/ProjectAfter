@@ -475,14 +475,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/login', async (req, res) => {
     try {
       const body = adminLoginSchema.parse(req.body);
+      const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+      
+      // Check if IP is currently banned from login attempts
+      const isBanned = await storage.isLoginBanned(ipAddress);
+      if (isBanned) {
+        const remaining = await storage.getLoginBanTimeRemaining(ipAddress);
+        const secondsRemaining = Math.ceil(remaining / 1000);
+        return res.status(429).json({ 
+          error: `Too many failed attempts. Try again in ${secondsRemaining} seconds.`,
+          bannedUntil: remaining 
+        });
+      }
+      
       const admin = await storage.getAdminByUsername(body.username);
       
       // Simple password check (in production, use bcrypt)
       if (admin && admin.passwordHash === body.password) {
+        // Successful login - reset failed attempts
+        await storage.recordSuccessfulLogin(ipAddress);
         const session = await storage.createAdminSession(admin.id);
-        res.json({ token: session.token, adminId: admin.id });
+        res.json({ token: session.token, adminId: admin.id, failedAttempts: 0 });
       } else {
-        res.status(401).json({ error: 'Invalid credentials' });
+        // Record failed attempt
+        await storage.recordFailedLoginAttempt(ipAddress);
+        const failedAttempts = await storage.getFailedLoginAttempts(ipAddress);
+        
+        res.status(401).json({ 
+          error: 'Invalid credentials',
+          failedAttempts,
+          isBanned: failedAttempts >= 2
+        });
       }
     } catch (error) {
       res.status(400).json({ error: 'Invalid request' });

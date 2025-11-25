@@ -48,6 +48,7 @@ export class MemStorage implements IStorage {
   private fakeUserCountSettings: { minUsers: number; maxUsers: number; enabled: boolean };
   private fakeBotsEnabled: boolean;
   private maintenanceMode: { enabled: boolean; reason: string };
+  private loginAttempts: Map<string, { failures: number; lastAttempt: number; bannedUntil: number; successfulLoginTime: number }>;
 
   constructor() {
     this.sessions = new Map();
@@ -61,6 +62,7 @@ export class MemStorage implements IStorage {
     this.fakeUserCountSettings = { minUsers: 0, maxUsers: 0, enabled: false };
     this.fakeBotsEnabled = false;
     this.maintenanceMode = { enabled: false, reason: '' };
+    this.loginAttempts = new Map();
     this.interests = [
       'Gaming', 'Music', 'Movies', 'Sports', 'Travel', 'Tech', 'Art', 'Books',
       'Fitness', 'Food', 'Photography', 'Cooking', 'Fashion', 'DIY', 'Pets',
@@ -308,6 +310,76 @@ export class MemStorage implements IStorage {
 
   async getMaintenanceMode(): Promise<{ enabled: boolean; reason: string }> {
     return this.maintenanceMode;
+  }
+
+  async recordFailedLoginAttempt(ipAddress: string): Promise<void> {
+    const now = Date.now();
+    const attempt = this.loginAttempts.get(ipAddress) || { failures: 0, lastAttempt: now, bannedUntil: 0, successfulLoginTime: 0 };
+    
+    attempt.failures += 1;
+    attempt.lastAttempt = now;
+    
+    // Ban for 1 minute (60000 ms) after 2 failed attempts
+    if (attempt.failures >= 2) {
+      attempt.bannedUntil = now + 60000;
+    }
+    
+    this.loginAttempts.set(ipAddress, attempt);
+  }
+
+  async recordSuccessfulLogin(ipAddress: string): Promise<void> {
+    const now = Date.now();
+    const attempt = this.loginAttempts.get(ipAddress) || { failures: 0, lastAttempt: now, bannedUntil: 0, successfulLoginTime: 0 };
+    
+    attempt.failures = 0;
+    attempt.bannedUntil = 0;
+    attempt.successfulLoginTime = now;
+    
+    this.loginAttempts.set(ipAddress, attempt);
+  }
+
+  async isLoginBanned(ipAddress: string): Promise<boolean> {
+    const attempt = this.loginAttempts.get(ipAddress);
+    if (!attempt) return false;
+    
+    const now = Date.now();
+    if (attempt.bannedUntil > now) {
+      return true;
+    }
+    
+    // Unban if ban period has expired
+    if (attempt.bannedUntil > 0 && attempt.bannedUntil <= now) {
+      attempt.bannedUntil = 0;
+    }
+    
+    return false;
+  }
+
+  async getFailedLoginAttempts(ipAddress: string): Promise<number> {
+    const attempt = this.loginAttempts.get(ipAddress);
+    if (!attempt) return 0;
+    
+    const now = Date.now();
+    const timeSinceLastSuccess = now - attempt.successfulLoginTime;
+    
+    // Reset counter if more than 24 hours since last successful login
+    if (attempt.successfulLoginTime > 0 && timeSinceLastSuccess > 86400000) {
+      attempt.failures = 0;
+      this.loginAttempts.set(ipAddress, attempt);
+      return 0;
+    }
+    
+    return attempt.failures;
+  }
+
+  async getLoginBanTimeRemaining(ipAddress: string): Promise<number> {
+    const attempt = this.loginAttempts.get(ipAddress);
+    if (!attempt || attempt.bannedUntil <= 0) return 0;
+    
+    const now = Date.now();
+    const remaining = attempt.bannedUntil - now;
+    
+    return remaining > 0 ? remaining : 0;
   }
 }
 

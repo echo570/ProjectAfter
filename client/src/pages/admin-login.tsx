@@ -12,6 +12,9 @@ export default function AdminLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [isBanned, setIsBanned] = useState(false);
+  const [banTimeRemaining, setBanTimeRemaining] = useState(0);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,17 +24,31 @@ export default function AdminLogin() {
       const response = await apiRequest("POST", "/api/admin/login", { username, password });
       const data = await response.json();
 
-      if (data.token) {
+      if (response.status === 429) {
+        setIsBanned(true);
+        setBanTimeRemaining(data.bannedUntil);
+        toast({
+          title: "Too Many Failed Attempts",
+          description: `Your IP has been temporarily locked. Please try again in ${Math.ceil(data.bannedUntil / 1000)} seconds.`,
+          variant: "destructive",
+        });
+      } else if (data.token) {
         localStorage.setItem("adminToken", data.token);
+        setFailedAttempts(0);
+        setIsBanned(false);
         toast({
           title: "Login Successful",
           description: "Welcome to the admin panel",
         });
         setLocation("/admin/dashboard");
       } else {
+        setFailedAttempts(data.failedAttempts || 0);
+        if (data.isBanned) {
+          setIsBanned(true);
+        }
         toast({
           title: "Login Failed",
-          description: "Invalid credentials",
+          description: data.error || "Invalid credentials",
           variant: "destructive",
         });
       }
@@ -84,6 +101,21 @@ export default function AdminLogin() {
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
         </form>
+
+        {failedAttempts > 0 && (
+          <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <p className="text-sm text-destructive">
+              {failedAttempts === 1 
+                ? "1 failed attempt since last successful login"
+                : `${failedAttempts} failed attempts since last successful login`}
+            </p>
+            {isBanned && (
+              <p className="text-xs text-destructive mt-1">
+                IP temporarily locked for security. Wait before trying again.
+              </p>
+            )}
+          </div>
+        )}
 
         <p className="text-xs text-muted-foreground mt-6 text-center">
           Demo credentials: admin / admin123
