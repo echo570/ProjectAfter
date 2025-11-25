@@ -412,8 +412,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/stats', async (req, res) => {
     const allUsers = Array.from(clients.values());
+    const displayCount = await storage.getDisplayUserCount();
     const stats: OnlineStats = {
-      totalOnline: clients.size,
+      totalOnline: displayCount,
       waiting: allUsers.filter(c => !c.sessionId).length,
       inChat: allUsers.filter(c => c.sessionId).length,
     };
@@ -533,6 +534,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ reports: reportsWithCounts });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch reports' });
+    }
+  });
+
+  // Fake user count settings
+  app.get('/api/admin/fake-users', verifyAdmin, async (req, res) => {
+    try {
+      const settings = await storage.getFakeUserCountSettings();
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch fake user settings' });
+    }
+  });
+
+  app.post('/api/admin/fake-users', verifyAdmin, async (req, res) => {
+    try {
+      const { minUsers, maxUsers, enabled } = req.body;
+      if (typeof minUsers !== 'number' || typeof maxUsers !== 'number' || typeof enabled !== 'boolean') {
+        return res.status(400).json({ error: 'Invalid parameters' });
+      }
+      if (minUsers < 0 || maxUsers < minUsers) {
+        return res.status(400).json({ error: 'Invalid range' });
+      }
+      await storage.setFakeUserCountSettings(minUsers, maxUsers, enabled);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to update fake user settings' });
     }
   });
 

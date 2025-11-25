@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { X, Plus, LogOut, Users, Activity, BarChart3, Ban } from "lucide-react";
+import { X, Plus, LogOut, Users, Activity, BarChart3, Ban, TrendingUp } from "lucide-react";
 
 interface Interest {
   name: string;
@@ -25,6 +25,9 @@ export default function AdminDashboard() {
   const [newBanIP, setNewBanIP] = useState("");
   const [newBanReason, setNewBanReason] = useState("");
   const [banDuration, setBanDuration] = useState("30");
+  const [fakeUserMin, setFakeUserMin] = useState("0");
+  const [fakeUserMax, setFakeUserMax] = useState("0");
+  const [fakeUserEnabled, setFakeUserEnabled] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -42,6 +45,19 @@ export default function AdminDashboard() {
     loadBans();
     loadMonitoring();
     loadAnalytics();
+    loadFakeUserSettings();
+  };
+
+  const loadFakeUserSettings = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/admin/fake-users");
+      const data = await response.json();
+      setFakeUserMin(data.minUsers.toString());
+      setFakeUserMax(data.maxUsers.toString());
+      setFakeUserEnabled(data.enabled);
+    } catch (error) {
+      console.error("Failed to load fake user settings");
+    }
   };
 
   const loadInterests = async () => {
@@ -188,6 +204,30 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUpdateFakeUsers = async () => {
+    const min = parseInt(fakeUserMin);
+    const max = parseInt(fakeUserMax);
+
+    if (isNaN(min) || isNaN(max) || min < 0 || max < min) {
+      toast({ title: "Error", description: "Please enter valid numbers (min ≤ max)", variant: "destructive" });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await apiRequest("POST", "/api/admin/fake-users", {
+        minUsers: min,
+        maxUsers: max,
+        enabled: fakeUserEnabled,
+      });
+      toast({ title: "Success", description: "Fake user settings updated" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update settings", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     setLocation("/");
@@ -328,6 +368,70 @@ export default function AdminDashboard() {
           ) : (
             <p className="text-muted-foreground text-center py-4">No active chat sessions</p>
           )}
+        </Card>
+
+        {/* Fake User Count Settings */}
+        <Card className="p-6 mt-6">
+          <div className="flex items-center gap-2 mb-6">
+            <TrendingUp className="w-6 h-6" />
+            <h2 className="text-2xl font-bold">Fake User Count</h2>
+          </div>
+
+          <div className="p-4 bg-secondary rounded-lg space-y-4">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={fakeUserEnabled}
+                onChange={(e) => setFakeUserEnabled(e.target.checked)}
+                className="w-5 h-5"
+                data-testid="checkbox-fake-users"
+              />
+              <label className="text-sm font-medium">Enable Fake User Count Display</label>
+            </div>
+
+            {fakeUserEnabled && (
+              <div className="space-y-3 mt-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Minimum Users</label>
+                  <Input
+                    type="number"
+                    value={fakeUserMin}
+                    onChange={(e) => setFakeUserMin(e.target.value)}
+                    placeholder="Minimum user count"
+                    min="0"
+                    data-testid="input-fake-min"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Maximum Users</label>
+                  <Input
+                    type="number"
+                    value={fakeUserMax}
+                    onChange={(e) => setFakeUserMax(e.target.value)}
+                    placeholder="Maximum user count"
+                    min="0"
+                    data-testid="input-fake-max"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <p className="text-xs text-muted-foreground mt-3">
+                  The user count displayed on the landing page will randomly jump between the min and max values.
+                </p>
+              </div>
+            )}
+
+            <Button
+              onClick={handleUpdateFakeUsers}
+              disabled={isLoading}
+              className="w-full mt-4"
+              data-testid="button-update-fake-users"
+            >
+              Update Settings
+            </Button>
+          </div>
         </Card>
 
         {/* Ban Management Section */}
