@@ -139,6 +139,12 @@ export interface SiteAnalytics {
   peakTime: string;
 }
 
+export interface FakeUserCountSettings {
+  minUsers: number;
+  maxUsers: number;
+  enabled: boolean;
+}
+
 export interface WebSocketMessage {
   type: 'find-match' | 'message' | 'typing' | 'match' | 'end' | 'partner-disconnected' | 'offer' | 'answer' | 'ice-candidate' | 'set-interests' | 'report-user';
   data?: any;

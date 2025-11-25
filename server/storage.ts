@@ -45,6 +45,7 @@ export class MemStorage implements IStorage {
   private bannedIPs: Map<string, BannedIP>;
   private reports: Report[];
   private sessionDurations: { sessionId: string; duration: number }[];
+  private fakeUserCountSettings: { minUsers: number; maxUsers: number; enabled: boolean };
 
   constructor() {
     this.sessions = new Map();
@@ -55,6 +56,7 @@ export class MemStorage implements IStorage {
     this.bannedIPs = new Map();
     this.reports = [];
     this.sessionDurations = [];
+    this.fakeUserCountSettings = { minUsers: 0, maxUsers: 0, enabled: false };
     this.interests = [
       'Gaming', 'Music', 'Movies', 'Sports', 'Travel', 'Tech', 'Art', 'Books',
       'Fitness', 'Food', 'Photography', 'Cooking', 'Fashion', 'DIY', 'Pets',
@@ -267,6 +269,25 @@ export class MemStorage implements IStorage {
 
   async getReports(): Promise<Report[]> {
     return this.reports;
+  }
+
+  async setFakeUserCountSettings(minUsers: number, maxUsers: number, enabled: boolean): Promise<void> {
+    this.fakeUserCountSettings = { minUsers, maxUsers, enabled };
+  }
+
+  async getFakeUserCountSettings(): Promise<{ minUsers: number; maxUsers: number; enabled: boolean }> {
+    return this.fakeUserCountSettings;
+  }
+
+  async getDisplayUserCount(): Promise<number> {
+    const actualCount = Array.from(this.userStates.values()).length;
+    
+    if (!this.fakeUserCountSettings.enabled) {
+      return actualCount;
+    }
+
+    const { minUsers, maxUsers } = this.fakeUserCountSettings;
+    return Math.floor(Math.random() * (maxUsers - minUsers + 1)) + minUsers;
   }
 }
 

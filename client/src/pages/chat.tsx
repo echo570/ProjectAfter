@@ -371,6 +371,27 @@ export default function Chat() {
     setLocation('/');
   };
 
+  const handleReportUser = () => {
+    if (!partnerId || wsRef.current?.readyState !== WebSocket.OPEN) {
+      toast({
+        title: "Error",
+        description: "Cannot report at this time",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    wsRef.current.send(JSON.stringify({
+      type: 'report-user',
+      data: { reportedUserId: partnerId, reason: 'Inappropriate behavior' },
+    }));
+
+    toast({
+      title: "Report Sent",
+      description: "Thank you for reporting. Our team will review this.",
+    });
+  };
+
   const resetChat = () => {
     setMessages([]);
     setIsTyping(false);
