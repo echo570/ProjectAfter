@@ -377,24 +377,42 @@ export default function Chat() {
   };
 
   const handleReportUser = () => {
-    if (!partnerId || wsRef.current?.readyState !== WebSocket.OPEN) {
+    if (!partnerId) {
       toast({
         title: "Error",
-        description: "Cannot report at this time",
+        description: "No partner to report at this time",
         variant: "destructive",
       });
       return;
     }
 
-    wsRef.current.send(JSON.stringify({
-      type: 'report-user',
-      data: { reportedUserId: partnerId, reason: 'Inappropriate behavior' },
-    }));
+    if (wsRef.current?.readyState !== WebSocket.OPEN) {
+      toast({
+        title: "Error",
+        description: "Connection lost. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    toast({
-      title: "Report Sent",
-      description: "Thank you for reporting. Our team will review this.",
-    });
+    try {
+      wsRef.current.send(JSON.stringify({
+        type: 'report-user',
+        data: { reportedUserId: partnerId, reason: 'Inappropriate behavior' },
+      }));
+
+      toast({
+        title: "Report Sent",
+        description: "Thank you for reporting. Our team will review this.",
+      });
+    } catch (error) {
+      console.error('Error sending report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send report. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetChat = () => {
@@ -515,6 +533,7 @@ export default function Chat() {
             variant="outline"
             className="w-14 h-14 rounded-full"
             onClick={handleReportUser}
+            disabled={!partnerId || chatStatus !== 'connected'}
             data-testid="button-report-user"
           >
             <Flag className="w-6 h-6" />
