@@ -4,9 +4,11 @@ services:
     env: node
     plan: free
     buildCommand: npm install
-    startCommand: npm run dev
+    startCommand: npx tsx server/index-prod.ts
     envVars:
       - key: NODE_ENV
         value: production
       - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_PASSWORD
         generateValue: true
