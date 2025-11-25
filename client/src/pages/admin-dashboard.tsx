@@ -936,6 +936,28 @@ export default function AdminDashboard() {
           </div>
         </Card>
 
+        {/* Logs Dialog */}
+        <Dialog open={showLogs} onOpenChange={setShowLogs}>
+          <DialogContent className="max-w-2xl h-96">
+            <DialogHeader>
+              <DialogTitle>Server Logs</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="h-full w-full rounded-md border p-4">
+              <div className="space-y-1 font-mono text-sm">
+                {logs.length > 0 ? (
+                  logs.map((log, index) => (
+                    <div key={index} className="text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">{log.timestamp}</span>
+                      <span className="ml-2">{log.message}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">No logs available</p>
+                )}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
