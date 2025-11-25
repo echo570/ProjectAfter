@@ -3,8 +3,8 @@ services:
     name: stranger-chat
     env: node
     plan: free
-    buildCommand: npm install
-    startCommand: npx tsx server/index-prod.ts
+    buildCommand: npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
