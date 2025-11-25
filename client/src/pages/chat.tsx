@@ -51,6 +51,24 @@ export default function Chat() {
   }, []);
 
   useEffect(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      const interestsStr = sessionStorage.getItem('userInterests');
+      if (interestsStr) {
+        try {
+          const interests = JSON.parse(interestsStr);
+          wsRef.current.send(JSON.stringify({
+            type: 'set-interests',
+            data: { interests },
+          }));
+          sessionStorage.removeItem('userInterests');
+        } catch (error) {
+          console.error('Failed to parse interests:', error);
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { InterestsSelector } from "@/components/InterestsSelector";
 import { Video, MessageCircle, Users } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { OnlineStats } from "@shared/schema";
@@ -8,6 +9,7 @@ import type { OnlineStats } from "@shared/schema";
 export default function Landing() {
   const [, setLocation] = useLocation();
   const [isStarting, setIsStarting] = useState(false);
+  const [showInterests, setShowInterests] = useState(false);
 
   const { data: stats } = useQuery<OnlineStats>({
     queryKey: ['/api/stats'],
@@ -15,8 +17,15 @@ export default function Landing() {
   });
 
   const handleStartChat = () => {
+    setShowInterests(true);
+  };
+
+  const handleInterestsSelected = (interests: string[]) => {
     setIsStarting(true);
-    setLocation('/chat');
+    sessionStorage.setItem('userInterests', JSON.stringify(interests));
+    setTimeout(() => {
+      setLocation('/chat');
+    }, 100);
   };
 
   return (
@@ -77,20 +86,29 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* CTA */}
-          <div className="pt-8">
-            <Button
-              size="lg"
-              className="text-lg px-12 py-6 h-auto rounded-lg"
-              onClick={handleStartChat}
-              disabled={isStarting}
-              data-testid="button-start-chat"
-            >
-              {isStarting ? "Starting..." : "Start Chatting"}
-            </Button>
-            <p className="text-xs text-muted-foreground mt-4">
-              No registration required • Completely anonymous
-            </p>
+          {/* CTA or Interests Selector */}
+          <div className="pt-8 max-w-2xl mx-auto">
+            {!showInterests ? (
+              <>
+                <Button
+                  size="lg"
+                  className="text-lg px-12 py-6 h-auto rounded-lg"
+                  onClick={handleStartChat}
+                  disabled={isStarting}
+                  data-testid="button-start-chat"
+                >
+                  {isStarting ? "Starting..." : "Start Chatting"}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-4">
+                  No registration required • Completely anonymous
+                </p>
+              </>
+            ) : (
+              <InterestsSelector
+                onSelect={handleInterestsSelected}
+                isLoading={isStarting}
+              />
+            )}
           </div>
 
           {/* Trust Indicator */}

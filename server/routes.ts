@@ -294,12 +294,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.setUserState(currentPartnerId, {
             id: currentPartnerId,
             status: 'waiting',
+            interests: partner.interests,
             connectedAt: Date.now(),
           });
         } else {
           await storage.setUserState(currentPartnerId, {
             id: currentPartnerId,
             status: 'idle',
+            interests: partner.interests,
             connectedAt: Date.now(),
           });
         }
@@ -315,12 +317,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.setUserState(userId, {
         id: userId,
         status: 'waiting',
+        interests: client.interests,
         connectedAt: Date.now(),
       });
     } else {
       await storage.setUserState(userId, {
         id: userId,
         status: 'idle',
+        interests: client.interests,
         connectedAt: Date.now(),
       });
     }
@@ -343,6 +347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.setUserState(client.partnerId, {
             id: client.partnerId,
             status: 'idle',
+            interests: partner.interests,
             connectedAt: Date.now(),
           });
         }
