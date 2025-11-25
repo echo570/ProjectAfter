@@ -1,4 +1,4 @@
-import type { ChatSession, UserState, Admin, AdminSession, BannedUser, BannedIP, Report, ChatMonitoringSession, SiteAnalytics } from "@shared/schema";
+import type { ChatSession, UserState, Admin, AdminSession, BannedUser, BannedIP, BlockedCountry, Report, ChatMonitoringSession, SiteAnalytics } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -33,6 +33,11 @@ export interface IStorage {
   addReport(reportedUserId: string, reportedIP: string, reporterUserId: string, reason: string): Promise<void>;
   getReportCountInLast24Hours(ipAddress: string): Promise<number>;
   getReports(): Promise<Report[]>;
+  // Country blocking
+  blockCountry(countryCode: string, countryName: string, reason: string, adminId: string): Promise<void>;
+  unblockCountry(countryCode: string): Promise<void>;
+  getBlockedCountries(): Promise<BlockedCountry[]>;
+  isCountryBlocked(countryCode: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -50,6 +55,7 @@ export class MemStorage implements IStorage {
   private maintenanceMode: { enabled: boolean; reason: string };
   private loginAttempts: Map<string, { failures: number; lastAttempt: number; bannedUntil: number; successfulLoginTime: number }>;
   private permanentAdminIP: string | null;
+  private blockedCountries: Map<string, BlockedCountry>;
 
   constructor() {
     this.sessions = new Map();
@@ -65,6 +71,7 @@ export class MemStorage implements IStorage {
     this.maintenanceMode = { enabled: false, reason: '' };
     this.loginAttempts = new Map();
     this.permanentAdminIP = null;
+    this.blockedCountries = new Map();
     this.interests = [
       'Gaming', 'Music', 'Movies', 'Sports', 'Travel', 'Tech', 'Art', 'Books',
       'Fitness', 'Food', 'Photography', 'Cooking', 'Fashion', 'DIY', 'Pets',
@@ -394,6 +401,30 @@ export class MemStorage implements IStorage {
 
   async clearPermanentAdminIP(): Promise<void> {
     this.permanentAdminIP = null;
+  }
+
+  async blockCountry(countryCode: string, countryName: string, reason: string, adminId: string): Promise<void> {
+    const block: BlockedCountry = {
+      id: randomUUID(),
+      countryCode: countryCode.toUpperCase(),
+      countryName,
+      reason,
+      blockedAt: Date.now(),
+      blockedBy: adminId,
+    };
+    this.blockedCountries.set(countryCode.toUpperCase(), block);
+  }
+
+  async unblockCountry(countryCode: string): Promise<void> {
+    this.blockedCountries.delete(countryCode.toUpperCase());
+  }
+
+  async getBlockedCountries(): Promise<BlockedCountry[]> {
+    return Array.from(this.blockedCountries.values());
+  }
+
+  async isCountryBlocked(countryCode: string): Promise<boolean> {
+    return this.blockedCountries.has(countryCode.toUpperCase());
   }
 }
 

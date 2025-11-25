@@ -22,25 +22,25 @@ interface ConnectedClient {
   profile?: { nickname: string; gender: string; age: number; country: string; countryFlag: string };
 }
 
-function getCountryFromIP(ip: string): { country: string; flag: string } {
-  const ipCountryMap: Record<string, { country: string; flag: string }> = {
-    '127.0.0.1': { country: 'Local', flag: '🌐' },
-    '::1': { country: 'Local', flag: '🌐' },
+function getCountryFromIP(ip: string): { country: string; countryCode: string; flag: string } {
+  const ipCountryMap: Record<string, { country: string; countryCode: string; flag: string }> = {
+    '127.0.0.1': { country: 'Local', countryCode: 'LOCAL', flag: '🌐' },
+    '::1': { country: 'Local', countryCode: 'LOCAL', flag: '🌐' },
   };
   
   if (ipCountryMap[ip]) return ipCountryMap[ip];
   
-  const countryFlags: Record<string, string> = {
-    'US': '🇺🇸', 'GB': '🇬🇧', 'CA': '🇨🇦', 'AU': '🇦🇺', 'NZ': '🇳🇿',
-    'DE': '🇩🇪', 'FR': '🇫🇷', 'IT': '🇮🇹', 'ES': '🇪🇸', 'NL': '🇳🇱', 'BE': '🇧🇪', 'AT': '🇦🇹', 'CH': '🇨🇭',
-    'SE': '🇸🇪', 'NO': '🇳🇴', 'DK': '🇩🇰', 'FI': '🇫🇮', 'PL': '🇵🇱', 'CZ': '🇨🇿', 'RU': '🇷🇺', 'UA': '🇺🇦',
-    'JP': '🇯🇵', 'CN': '🇨🇳', 'IN': '🇮🇳', 'BR': '🇧🇷', 'MX': '🇲🇽', 'ZA': '🇿🇦', 'SG': '🇸🇬', 'HK': '🇭🇰',
-    'TH': '🇹🇭', 'KR': '🇰🇷', 'PH': '🇵🇭', 'VN': '🇻🇳', 'MY': '🇲🇾', 'ID': '🇮🇩', 'TR': '🇹🇷', 'AE': '🇦🇪',
-    'SA': '🇸🇦', 'IL': '🇮🇱', 'EG': '🇪🇬', 'NG': '🇳🇬', 'KE': '🇰🇪', 'GR': '🇬🇷', 'PT': '🇵🇹', 'IR': '🇮🇷',
-    'PK': '🇵🇰', 'BD': '🇧🇩', 'LK': '🇱🇰', 'TW': '🇹🇼', 'AR': '🇦🇷', 'CL': '🇨🇱', 'CO': '🇨🇴', 'PE': '🇵🇪',
+  const countryData: Record<string, { name: string; code: string; flag: string }> = {
+    'US': { name: 'United States', code: 'US', flag: '🇺🇸' }, 'GB': { name: 'United Kingdom', code: 'GB', flag: '🇬🇧' }, 'CA': { name: 'Canada', code: 'CA', flag: '🇨🇦' }, 'AU': { name: 'Australia', code: 'AU', flag: '🇦🇺' }, 'NZ': { name: 'New Zealand', code: 'NZ', flag: '🇳🇿' },
+    'DE': { name: 'Germany', code: 'DE', flag: '🇩🇪' }, 'FR': { name: 'France', code: 'FR', flag: '🇫🇷' }, 'IT': { name: 'Italy', code: 'IT', flag: '🇮🇹' }, 'ES': { name: 'Spain', code: 'ES', flag: '🇪🇸' }, 'NL': { name: 'Netherlands', code: 'NL', flag: '🇳🇱' }, 'BE': { name: 'Belgium', code: 'BE', flag: '🇧🇪' }, 'AT': { name: 'Austria', code: 'AT', flag: '🇦🇹' }, 'CH': { name: 'Switzerland', code: 'CH', flag: '🇨🇭' },
+    'SE': { name: 'Sweden', code: 'SE', flag: '🇸🇪' }, 'NO': { name: 'Norway', code: 'NO', flag: '🇳🇴' }, 'DK': { name: 'Denmark', code: 'DK', flag: '🇩🇰' }, 'FI': { name: 'Finland', code: 'FI', flag: '🇫🇮' }, 'PL': { name: 'Poland', code: 'PL', flag: '🇵🇱' }, 'CZ': { name: 'Czech Republic', code: 'CZ', flag: '🇨🇿' }, 'RU': { name: 'Russia', code: 'RU', flag: '🇷🇺' }, 'UA': { name: 'Ukraine', code: 'UA', flag: '🇺🇦' },
+    'JP': { name: 'Japan', code: 'JP', flag: '🇯🇵' }, 'CN': { name: 'China', code: 'CN', flag: '🇨🇳' }, 'IN': { name: 'India', code: 'IN', flag: '🇮🇳' }, 'BR': { name: 'Brazil', code: 'BR', flag: '🇧🇷' }, 'MX': { name: 'Mexico', code: 'MX', flag: '🇲🇽' }, 'ZA': { name: 'South Africa', code: 'ZA', flag: '🇿🇦' }, 'SG': { name: 'Singapore', code: 'SG', flag: '🇸🇬' }, 'HK': { name: 'Hong Kong', code: 'HK', flag: '🇭🇰' },
+    'TH': { name: 'Thailand', code: 'TH', flag: '🇹🇭' }, 'KR': { name: 'South Korea', code: 'KR', flag: '🇰🇷' }, 'PH': { name: 'Philippines', code: 'PH', flag: '🇵🇭' }, 'VN': { name: 'Vietnam', code: 'VN', flag: '🇻🇳' }, 'MY': { name: 'Malaysia', code: 'MY', flag: '🇲🇾' }, 'ID': { name: 'Indonesia', code: 'ID', flag: '🇮🇩' }, 'TR': { name: 'Turkey', code: 'TR', flag: '🇹🇷' }, 'AE': { name: 'UAE', code: 'AE', flag: '🇦🇪' },
+    'SA': { name: 'Saudi Arabia', code: 'SA', flag: '🇸🇦' }, 'IL': { name: 'Israel', code: 'IL', flag: '🇮🇱' }, 'EG': { name: 'Egypt', code: 'EG', flag: '🇪🇬' }, 'NG': { name: 'Nigeria', code: 'NG', flag: '🇳🇬' }, 'KE': { name: 'Kenya', code: 'KE', flag: '🇰🇪' }, 'GR': { name: 'Greece', code: 'GR', flag: '🇬🇷' }, 'PT': { name: 'Portugal', code: 'PT', flag: '🇵🇹' }, 'IR': { name: 'Iran', code: 'IR', flag: '🇮🇷' },
+    'PK': { name: 'Pakistan', code: 'PK', flag: '🇵🇰' }, 'BD': { name: 'Bangladesh', code: 'BD', flag: '🇧🇩' }, 'LK': { name: 'Sri Lanka', code: 'LK', flag: '🇱🇰' }, 'TW': { name: 'Taiwan', code: 'TW', flag: '🇹🇼' }, 'AR': { name: 'Argentina', code: 'AR', flag: '🇦🇷' }, 'CL': { name: 'Chile', code: 'CL', flag: '🇨🇱' }, 'CO': { name: 'Colombia', code: 'CO', flag: '🇨🇴' }, 'PE': { name: 'Peru', code: 'PE', flag: '🇵🇪' },
   };
   
-  return { country: 'Unknown', flag: '🌍' };
+  return { country: 'Unknown', countryCode: 'XX', flag: '🌍' };
 }
 
 function generateRandomBotProfile() {
@@ -99,6 +99,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (isBanned) {
       console.log(`Blocked banned IP: ${ipAddress}`);
       ws.close(4000, 'You have been banned from this service');
+      return;
+    }
+
+    // Check if country is blocked
+    const countryInfo = getCountryFromIP(ipAddress);
+    const isCountryBlocked = await storage.isCountryBlocked(countryInfo.countryCode);
+    if (isCountryBlocked) {
+      console.log(`Blocked user from blocked country: ${countryInfo.country} (${ipAddress})`);
+      ws.close(4001, `Access denied: Service is not available in ${countryInfo.country}`);
       return;
     }
 

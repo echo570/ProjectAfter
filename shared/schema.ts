@@ -129,6 +129,15 @@ export interface BannedIP {
   expiresAt?: number;
 }
 
+export interface BlockedCountry {
+  id: string;
+  countryCode: string;
+  countryName: string;
+  reason: string;
+  blockedAt: number;
+  blockedBy: string;
+}
+
 export interface Report {
   id: string;
   reportedUserId: string;
