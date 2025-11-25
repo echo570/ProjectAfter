@@ -435,7 +435,7 @@ export default function Chat() {
   return (
     <div className="h-screen flex flex-col lg:flex-row overflow-hidden bg-background">
       {/* Video Section */}
-      <div className="flex-1 flex flex-col relative bg-black">
+      <div className="flex-1 flex flex-col relative bg-black min-h-0">
         {/* Remote Video */}
         <div className="flex-1 relative">
           <video
@@ -527,7 +527,7 @@ export default function Chat() {
       </div>
 
       {/* Chat Sidebar */}
-      <div className="w-full lg:w-96 flex flex-col border-l bg-background">
+      <div className="w-full lg:w-96 flex-1 lg:flex-1 flex flex-col border-l bg-background min-h-0">
         {/* Chat Header */}
         <div className="p-4 border-b flex items-center justify-between">
           <h2 className="font-semibold">Chat</h2>
