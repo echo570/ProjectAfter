@@ -465,6 +465,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(stats);
   });
 
+  // Check if user's IP is banned
+  app.get('/api/check-ban-status', async (req, res) => {
+    const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+    try {
+      const isBanned = await storage.isIPBanned(ipAddress);
+      if (isBanned) {
+        const bannedIPs = await storage.getBannedIPs();
+        const banInfo = bannedIPs.find(b => b.ipAddress === ipAddress);
+        const expiresAt = banInfo?.expiresAt || Date.now();
+        const timeRemaining = Math.max(0, expiresAt - Date.now());
+        res.json({ 
+          isBanned: true, 
+          reason: banInfo?.reason || 'No reason provided',
+          timeRemaining,
+          expiresAt
+        });
+      } else {
+        res.json({ isBanned: false });
+      }
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to check ban status' });
+    }
+  });
+
   // Public endpoint to get available interests
   app.get('/api/interests', async (req, res) => {
     const interests = await storage.getInterests();

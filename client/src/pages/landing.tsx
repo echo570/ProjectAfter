@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { InterestsSelector } from "@/components/InterestsSelector";
-import { Video, MessageCircle, Users, AlertTriangle } from "lucide-react";
+import { Video, MessageCircle, Users, AlertTriangle, Lock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { OnlineStats } from "@shared/schema";
 
@@ -11,6 +11,8 @@ export default function Landing() {
   const [isStarting, setIsStarting] = useState(false);
   const [showInterests, setShowInterests] = useState(false);
   const [maintenanceMode, setMaintenanceMode] = useState<{ enabled: boolean; reason: string } | null>(null);
+  const [banStatus, setBanStatus] = useState<{ isBanned: boolean; reason?: string; timeRemaining?: number } | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
 
   const { data: stats } = useQuery<OnlineStats>({
     queryKey: ['/api/stats'],
@@ -33,8 +35,35 @@ export default function Landing() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleStartChat = () => {
-    setShowInterests(true);
+  useEffect(() => {
+    if (!banStatus?.isBanned || timeLeft <= 0) return;
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setBanStatus(null);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [banStatus, timeLeft]);
+
+  const handleStartChat = async () => {
+    try {
+      const response = await fetch('/api/check-ban-status');
+      const data = await response.json();
+      if (data.isBanned) {
+        setBanStatus(data);
+        setTimeLeft(Math.ceil(data.timeRemaining / 1000));
+      } else {
+        setShowInterests(true);
+      }
+    } catch (error) {
+      console.error('Failed to check ban status:', error);
+      setShowInterests(true);
+    }
   };
 
   const handleInterestsSelected = (interests: string[]) => {
@@ -44,6 +73,39 @@ export default function Landing() {
       setLocation('/chat');
     }, 100);
   };
+
+  if (banStatus?.isBanned) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-destructive/5 via-background to-destructive/5 px-4">
+        <div className="max-w-md text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+            <Lock className="w-8 h-8 text-destructive" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold">Your IP is Banned</h1>
+            <p className="text-muted-foreground">
+              Your IP address has been temporarily restricted from accessing this service.
+            </p>
+          </div>
+          <div className="p-4 bg-secondary rounded-lg space-y-3">
+            <div>
+              <p className="text-sm font-medium">Reason:</p>
+              <p className="text-sm text-muted-foreground mt-1">{banStatus.reason}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Time Remaining:</p>
+              <p className="text-lg font-bold text-destructive mt-1">
+                {Math.floor(timeLeft / 60)}m {timeLeft % 60}s
+              </p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Please try again after the ban period expires.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (maintenanceMode?.enabled) {
     return (
