@@ -525,8 +525,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     (req as any).adminId = session.adminId;
+    (req as any).ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
     next();
   };
+
+  // Get failed login attempts for the current admin's IP
+  app.get('/api/admin/login-attempts', verifyAdmin, async (req, res) => {
+    try {
+      const ipAddress = (req as any).ipAddress;
+      const failedAttempts = await storage.getFailedLoginAttempts(ipAddress);
+      res.json({ failedAttempts });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch login attempts' });
+    }
+  });
 
   // Get interests (admin only)
   app.get('/api/admin/interests', verifyAdmin, async (req, res) => {

@@ -32,6 +32,8 @@ export default function AdminDashboard() {
   const [fakeBotsEnabled, setFakeBotsEnabled] = useState(false);
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
   const [maintenanceReason, setMaintenanceReason] = useState("");
+  const [failedLoginAttempts, setFailedLoginAttempts] = useState(0);
+  const [shownFailedAttemptsWarning, setShownFailedAttemptsWarning] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -41,6 +43,8 @@ export default function AdminDashboard() {
     }
     // Load all data once on mount
     loadInitialData();
+    // Check for failed login attempts on mount
+    checkFailedLoginAttempts();
     // Periodically refresh only analytics and monitoring (not user-editable settings)
     const interval = setInterval(loadLiveData, 5000);
     return () => clearInterval(interval);
@@ -58,6 +62,26 @@ export default function AdminDashboard() {
     loadBans();
     loadMonitoring();
     loadAnalytics();
+  };
+
+  const checkFailedLoginAttempts = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/admin/login-attempts");
+      const data = await response.json();
+      setFailedLoginAttempts(data.failedAttempts || 0);
+      
+      // Show warning only once per session if there are failed attempts
+      if (data.failedAttempts > 0 && !shownFailedAttemptsWarning) {
+        toast({
+          title: "Security Alert",
+          description: `There were ${data.failedAttempts} failed login attempt${data.failedAttempts !== 1 ? 's' : ''} to your admin account.`,
+          variant: "destructive",
+        });
+        setShownFailedAttemptsWarning(true);
+      }
+    } catch (error) {
+      console.error("Failed to check login attempts");
+    }
   };
 
   const loadFakeUserSettings = async () => {

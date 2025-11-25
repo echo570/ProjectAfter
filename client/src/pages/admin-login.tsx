@@ -21,18 +21,40 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
-      const response = await apiRequest("POST", "/api/admin/login", { username, password });
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
       const data = await response.json();
 
       if (response.status === 429) {
         setIsBanned(true);
         setBanTimeRemaining(data.bannedUntil);
+        const secondsRemaining = Math.ceil(data.bannedUntil / 1000);
         toast({
           title: "Too Many Failed Attempts",
-          description: `Your IP has been temporarily locked. Please try again in ${Math.ceil(data.bannedUntil / 1000)} seconds.`,
+          description: `Your IP has been temporarily locked. Banned for ${secondsRemaining} second${secondsRemaining !== 1 ? 's' : ''}.`,
           variant: "destructive",
         });
-      } else if (data.token) {
+      } else if (response.status === 401) {
+        setFailedAttempts(data.failedAttempts || 0);
+        if (data.isBanned) {
+          setIsBanned(true);
+          const secondsRemaining = Math.ceil(data.banTimeRemaining / 1000);
+          toast({
+            title: "Account Locked",
+            description: `Too many failed attempts. Banned for ${secondsRemaining} second${secondsRemaining !== 1 ? 's' : ''}.`,
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Login Failed",
+            description: "Invalid credentials",
+            variant: "destructive",
+          });
+        }
+      } else if (response.status === 200 && data.token) {
         localStorage.setItem("adminToken", data.token);
         setFailedAttempts(0);
         setIsBanned(false);
@@ -42,13 +64,9 @@ export default function AdminLogin() {
         });
         setLocation("/admin/dashboard");
       } else {
-        setFailedAttempts(data.failedAttempts || 0);
-        if (data.isBanned) {
-          setIsBanned(true);
-        }
         toast({
-          title: "Login Failed",
-          description: data.error || "Invalid credentials",
+          title: "Error",
+          description: data.error || "Login failed",
           variant: "destructive",
         });
       }
@@ -102,16 +120,16 @@ export default function AdminLogin() {
           </Button>
         </form>
 
-        {failedAttempts > 0 && (
-          <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-            <p className="text-sm text-destructive">
+        {(failedAttempts > 0 || isBanned) && (
+          <div className={`mt-4 p-3 border rounded-lg ${isBanned ? 'bg-destructive/15 border-destructive/30' : 'bg-destructive/10 border-destructive/20'}`}>
+            <p className="text-sm font-medium text-destructive">
               {failedAttempts === 1 
                 ? "1 failed attempt since last successful login"
                 : `${failedAttempts} failed attempts since last successful login`}
             </p>
             {isBanned && (
-              <p className="text-xs text-destructive mt-1">
-                IP temporarily locked for security. Wait before trying again.
+              <p className="text-xs text-destructive mt-2 font-medium">
+                ⏱ Banned for {Math.ceil(banTimeRemaining / 1000)} second{Math.ceil(banTimeRemaining / 1000) !== 1 ? 's' : ''}
               </p>
             )}
           </div>
