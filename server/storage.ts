@@ -49,6 +49,7 @@ export class MemStorage implements IStorage {
   private fakeBotsEnabled: boolean;
   private maintenanceMode: { enabled: boolean; reason: string };
   private loginAttempts: Map<string, { failures: number; lastAttempt: number; bannedUntil: number; successfulLoginTime: number }>;
+  private permanentAdminIP: string | null;
 
   constructor() {
     this.sessions = new Map();
@@ -63,6 +64,7 @@ export class MemStorage implements IStorage {
     this.fakeBotsEnabled = false;
     this.maintenanceMode = { enabled: false, reason: '' };
     this.loginAttempts = new Map();
+    this.permanentAdminIP = null;
     this.interests = [
       'Gaming', 'Music', 'Movies', 'Sports', 'Travel', 'Tech', 'Art', 'Books',
       'Fitness', 'Food', 'Photography', 'Cooking', 'Fashion', 'DIY', 'Pets',
@@ -380,6 +382,18 @@ export class MemStorage implements IStorage {
     const remaining = attempt.bannedUntil - now;
     
     return remaining > 0 ? remaining : 0;
+  }
+
+  async setPermanentAdminIP(ipAddress: string): Promise<void> {
+    this.permanentAdminIP = ipAddress;
+  }
+
+  async getPermanentAdminIP(): Promise<string | null> {
+    return this.permanentAdminIP;
+  }
+
+  async clearPermanentAdminIP(): Promise<void> {
+    this.permanentAdminIP = null;
   }
 }
 

@@ -540,6 +540,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get admin IP info
+  app.get('/api/admin/ip-info', verifyAdmin, async (req, res) => {
+    try {
+      const currentIP = (req as any).ipAddress;
+      const permanentIP = await storage.getPermanentAdminIP();
+      res.json({ currentIP, permanentIP });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch IP info' });
+    }
+  });
+
+  // Set permanent admin IP
+  app.post('/api/admin/set-permanent-ip', verifyAdmin, async (req, res) => {
+    try {
+      const ipAddress = (req as any).ipAddress;
+      await storage.setPermanentAdminIP(ipAddress);
+      res.json({ success: true, permanentIP: ipAddress });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to set permanent IP' });
+    }
+  });
+
+  // Clear permanent admin IP
+  app.post('/api/admin/clear-permanent-ip', verifyAdmin, async (req, res) => {
+    try {
+      await storage.clearPermanentAdminIP();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to clear permanent IP' });
+    }
+  });
+
   // Get interests (admin only)
   app.get('/api/admin/interests', verifyAdmin, async (req, res) => {
     const interests = await storage.getInterests();

@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { X, Plus, LogOut, Users, Activity, BarChart3, Ban, TrendingUp, AlertTriangle } from "lucide-react";
+import { X, Plus, LogOut, Users, Activity, BarChart3, Ban, TrendingUp, AlertTriangle, Lock, Unlock } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Interest {
@@ -34,6 +34,8 @@ export default function AdminDashboard() {
   const [maintenanceReason, setMaintenanceReason] = useState("");
   const [failedLoginAttempts, setFailedLoginAttempts] = useState(0);
   const [shownFailedAttemptsWarning, setShownFailedAttemptsWarning] = useState(false);
+  const [currentAdminIP, setCurrentAdminIP] = useState("");
+  const [permanentAdminIP, setPermanentAdminIP] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -45,6 +47,8 @@ export default function AdminDashboard() {
     loadInitialData();
     // Check for failed login attempts on mount
     checkFailedLoginAttempts();
+    // Load admin IP info
+    loadAdminIPInfo();
     // Periodically refresh only analytics and monitoring (not user-editable settings)
     const interval = setInterval(loadLiveData, 5000);
     return () => clearInterval(interval);
@@ -81,6 +85,44 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error("Failed to check login attempts");
+    }
+  };
+
+  const loadAdminIPInfo = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/admin/ip-info");
+      const data = await response.json();
+      setCurrentAdminIP(data.currentIP);
+      setPermanentAdminIP(data.permanentIP);
+    } catch (error) {
+      console.error("Failed to load IP info");
+    }
+  };
+
+  const handleSetPermanentIP = async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/admin/set-permanent-ip", {});
+      const data = await response.json();
+      setPermanentAdminIP(data.permanentIP);
+      toast({ title: "Success", description: `Permanent admin IP set to ${data.permanentIP}` });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to set permanent IP", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClearPermanentIP = async () => {
+    setIsLoading(true);
+    try {
+      await apiRequest("POST", "/api/admin/clear-permanent-ip", {});
+      setPermanentAdminIP(null);
+      toast({ title: "Success", description: "Permanent admin IP cleared" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to clear permanent IP", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -461,6 +503,62 @@ export default function AdminDashboard() {
           ) : (
             <p className="text-muted-foreground text-center py-4">No active chat sessions</p>
           )}
+        </Card>
+
+        {/* Admin IP Security */}
+        <Card className="p-6 mt-6 border-blue-500/30">
+          <div className="flex items-center gap-2 mb-6">
+            <Lock className="w-6 h-6 text-blue-600" />
+            <h2 className="text-2xl font-bold">Admin IP Security</h2>
+          </div>
+
+          <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-4">
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Your Current IP Address:</p>
+              <p className="text-lg font-mono bg-background p-2 rounded border">
+                {currentAdminIP || "Loading..."}
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Permanent Admin IP:</p>
+              {permanentAdminIP ? (
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-mono bg-background p-2 rounded border flex-1">
+                    {permanentAdminIP}
+                  </p>
+                  <Button
+                    onClick={handleClearPermanentIP}
+                    disabled={isLoading}
+                    variant="destructive"
+                    size="sm"
+                    data-testid="button-clear-permanent-ip"
+                  >
+                    <Unlock className="w-4 h-4 mr-1" />
+                    Clear
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-muted-foreground italic">Not set</p>
+                  <Button
+                    onClick={handleSetPermanentIP}
+                    disabled={isLoading || !currentAdminIP}
+                    variant="default"
+                    size="sm"
+                    data-testid="button-set-permanent-ip"
+                  >
+                    <Lock className="w-4 h-4 mr-1" />
+                    Set Current IP as Permanent
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-4">
+              Setting a permanent admin IP will restrict admin access to only that IP address for added security.
+            </p>
+          </div>
         </Card>
 
         {/* Maintenance Mode */}
