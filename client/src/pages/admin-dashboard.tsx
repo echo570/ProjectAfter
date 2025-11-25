@@ -47,6 +47,7 @@ export default function AdminDashboard() {
   const [logs, setLogs] = useState<Array<{ timestamp: string; message: string }>>([]);
   const [metrics, setMetrics] = useState<any>(null);
   const [metricsInterval, setMetricsInterval] = useState<NodeJS.Timeout | null>(null);
+  const [aiEnabled, setAiEnabled] = useState(false);
 
   useEffect(() => {
     loadMetrics();
@@ -82,6 +83,7 @@ export default function AdminDashboard() {
     loadAnalytics();
     loadFakeUserSettings();
     loadBlockedCountries();
+    loadAISettings();
   };
 
   const loadLiveData = async () => {
@@ -291,6 +293,37 @@ export default function AdminDashboard() {
       setMetrics(data);
     } catch (error) {
       console.error("Failed to load metrics");
+    }
+  };
+
+  const loadAISettings = async () => {
+    try {
+      const response = await apiRequest("GET", "/api/admin/ai-settings");
+      const data = await response.json();
+      setAiEnabled(data.enabled);
+    } catch (error) {
+      console.error("Failed to load AI settings");
+    }
+  };
+
+  const handleToggleAI = async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiRequest("POST", "/api/admin/ai-settings", { enabled: !aiEnabled });
+      const data = await response.json();
+      setAiEnabled(data.enabled);
+      toast({
+        title: "Success",
+        description: `AI chat has been ${data.enabled ? 'enabled' : 'disabled'}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update AI settings",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -786,6 +819,29 @@ export default function AdminDashboard() {
                 {maintenanceEnabled ? 'Site is Offline' : 'Site is Online'}
               </Button>
             </div>
+          </div>
+        </Card>
+
+        {/* AI Chat Settings */}
+        <Card className="p-6 mt-6 border-blue-500/30">
+          <div className="flex items-center gap-2 mb-6">
+            <MessageCircle className="w-6 h-6 text-blue-600" />
+            <h2 className="text-2xl font-bold">AI Chat Assistant</h2>
+          </div>
+
+          <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg space-y-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Enable or disable the AI chat assistant powered by Google Gemini. Users can chat with AI when enabled.
+            </p>
+            <Button
+              onClick={handleToggleAI}
+              disabled={isLoading}
+              className="w-full"
+              variant={aiEnabled ? "default" : "outline"}
+              data-testid="button-toggle-ai"
+            >
+              {aiEnabled ? 'AI Chat Enabled' : 'AI Chat Disabled'}
+            </Button>
           </div>
         </Card>
 
