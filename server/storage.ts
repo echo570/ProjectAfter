@@ -1,5 +1,7 @@
 import type { ChatSession, UserState, Admin, AdminSession, BannedUser, BannedIP, BlockedCountry, Report, ChatMonitoringSession, SiteAnalytics } from "@shared/schema";
 import { randomUUID } from "crypto";
+import fs from "fs/promises";
+import path from "path";
 
 export interface IStorage {
   createSession(user1Id: string, user2Id: string): Promise<ChatSession>;
@@ -56,6 +58,7 @@ export class MemStorage implements IStorage {
   private loginAttempts: Map<string, { failures: number; lastAttempt: number; bannedUntil: number; successfulLoginTime: number }>;
   private permanentAdminIP: string | null;
   private blockedCountries: Map<string, BlockedCountry>;
+  private settingsPath = path.join(process.cwd(), 'data', 'admin-settings.json');
 
   constructor() {
     this.sessions = new Map();
@@ -84,6 +87,40 @@ export class MemStorage implements IStorage {
       username: 'admin',
       passwordHash: 'admin123', // In production, use proper hashing
     });
+    
+    // Load persistent settings on startup
+    this.loadSettingsFromDisk();
+  }
+
+  private async loadSettingsFromDisk() {
+    try {
+      const data = await fs.readFile(this.settingsPath, 'utf-8');
+      const settings = JSON.parse(data);
+      if (settings.interests) this.interests = settings.interests;
+      if (settings.fakeBotsEnabled !== undefined) this.fakeBotsEnabled = settings.fakeBotsEnabled;
+      if (settings.fakeUserCountSettings) this.fakeUserCountSettings = settings.fakeUserCountSettings;
+      if (settings.maintenanceMode) this.maintenanceMode = settings.maintenanceMode;
+      if (settings.permanentAdminIP) this.permanentAdminIP = settings.permanentAdminIP;
+      console.log('Admin settings loaded from disk');
+    } catch {
+      console.log('No existing admin settings found, using defaults');
+    }
+  }
+
+  private async saveSettingsToDisk() {
+    try {
+      await fs.mkdir(path.dirname(this.settingsPath), { recursive: true });
+      const settings = {
+        interests: this.interests,
+        fakeBotsEnabled: this.fakeBotsEnabled,
+        fakeUserCountSettings: this.fakeUserCountSettings,
+        maintenanceMode: this.maintenanceMode,
+        permanentAdminIP: this.permanentAdminIP,
+      };
+      await fs.writeFile(this.settingsPath, JSON.stringify(settings, null, 2));
+    } catch (error) {
+      console.error('Failed to save admin settings:', error);
+    }
   }
 
   async createSession(user1Id: string, user2Id: string): Promise<ChatSession> {
