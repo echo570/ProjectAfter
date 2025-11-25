@@ -486,6 +486,15 @@ export default function Chat() {
           </Button>
           <Button
             size="icon"
+            variant="outline"
+            className="w-14 h-14 rounded-full"
+            onClick={handleReportUser}
+            data-testid="button-report-user"
+          >
+            <Flag className="w-6 h-6" />
+          </Button>
+          <Button
+            size="icon"
             variant="destructive"
             className="w-14 h-14 rounded-full"
             onClick={handleEndChat}
