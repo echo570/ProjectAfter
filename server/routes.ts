@@ -1000,9 +1000,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const memUsage = process.memoryUsage();
       const uptime = process.uptime();
-      const totalMemory = require('os').totalmem();
-      const freeMemory = require('os').freemem();
-      const cpus = require('os').cpus();
+      const totalMemory = os.totalmem();
+      const freeMemory = os.freemem();
+      const cpus = os.cpus();
       
       const cpuUsage = process.cpuUsage();
       const cpuPercent = (cpuUsage.user + cpuUsage.system) / (uptime * 1000000) * 100;
@@ -1022,6 +1022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cacheSize: logBuffer.length,
       });
     } catch (error) {
+      console.error('Metrics error:', error);
       res.status(500).json({ error: 'Failed to fetch metrics' });
     }
   });
