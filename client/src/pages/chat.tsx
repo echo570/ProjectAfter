@@ -18,12 +18,16 @@ import {
 } from "lucide-react";
 import type { Message, WebSocketMessage, UserProfile } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/use-language";
+import { useTranslation } from "@/lib/i18n";
 
 type ChatStatus = 'waiting' | 'connected' | 'disconnected';
 
 export default function Chat() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const { t } = useTranslation(language);
 
   const [chatStatus, setChatStatus] = useState<ChatStatus>('waiting');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -119,9 +123,9 @@ export default function Chat() {
         setChatStatus('connected');
         const partnerInfo = msg.data.partnerProfile 
           ? `${msg.data.partnerProfile.nickname}, ${msg.data.partnerProfile.age} ${msg.data.partnerProfile.countryFlag}`
-          : "Stranger connected!";
+          : t('chat.match.found');
         toast({
-          title: "Match found!",
+          title: t('chat.match.found'),
           description: partnerInfo,
         });
         if (msg.data.initiator) {
@@ -363,8 +367,8 @@ export default function Chat() {
     resetChat();
     setChatStatus('waiting');
     toast({
-      title: "Stranger disconnected",
-      description: "Finding a new person for you...",
+      title: t('chat.partner.disconnected'),
+      description: t('chat.partner.finding'),
     });
     
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -379,7 +383,7 @@ export default function Chat() {
   const handleReportUser = () => {
     if (!partnerId) {
       toast({
-        title: "Error",
+        title: t('chat.error'),
         description: "No partner to report at this time",
         variant: "destructive",
       });
@@ -388,8 +392,8 @@ export default function Chat() {
 
     if (wsRef.current?.readyState !== WebSocket.OPEN) {
       toast({
-        title: "Error",
-        description: "Connection lost. Please try again.",
+        title: t('chat.error'),
+        description: t('chat.connection.error'),
         variant: "destructive",
       });
       return;
@@ -402,14 +406,14 @@ export default function Chat() {
       }));
 
       toast({
-        title: "Report Sent",
-        description: "Thank you for reporting. Our team will review this.",
+        title: t('chat.report.success'),
+        description: t('chat.report.success.msg'),
       });
     } catch (error) {
       console.error('Error sending report:', error);
       toast({
-        title: "Error",
-        description: "Failed to send report. Please try again.",
+        title: t('chat.error'),
+        description: t('chat.report.error'),
         variant: "destructive",
       });
     }
@@ -452,7 +456,7 @@ export default function Chat() {
   };
 
   if (chatStatus === 'waiting') {
-    return <WaitingScreen onCancel={handleCancelWaiting} />;
+    return <WaitingScreen onCancel={handleCancelWaiting} language={language} />;
   }
 
   return (

@@ -5,13 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { X, User, Heart, Sparkles } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useTranslation } from "@/lib/i18n";
+import type { Language } from "@/lib/i18n";
 
 interface InterestsSelectorProps {
   onSelect: (data: { nickname: string; gender: string; age: number; interests: string[] }) => void;
   isLoading?: boolean;
+  language: Language;
 }
 
-export function InterestsSelector({ onSelect, isLoading = false }: InterestsSelectorProps) {
+export function InterestsSelector({ onSelect, isLoading = false, language }: InterestsSelectorProps) {
+  const { t } = useTranslation(language);
   const [selected, setSelected] = useState<string[]>([]);
   const [interestsList, setInterestsList] = useState<string[]>([]);
   const [listLoading, setListLoading] = useState(true);
@@ -71,9 +75,9 @@ export function InterestsSelector({ onSelect, isLoading = false }: InterestsSele
           </div>
         </div>
         <div>
-          <h2 className="text-3xl font-bold">Create Your Profile</h2>
+          <h2 className="text-3xl font-bold">{t('profile.title')}</h2>
           <p className="text-muted-foreground mt-2">
-            Let people know who you are
+            {t('profile.subtitle')}
           </p>
         </div>
       </div>
@@ -83,13 +87,13 @@ export function InterestsSelector({ onSelect, isLoading = false }: InterestsSele
         <div>
           <div className="flex items-center gap-2 mb-2">
             <User className="w-4 h-4 text-primary" />
-            <label className="text-sm font-semibold">Nickname</label>
+            <label className="text-sm font-semibold">{t('profile.nickname')}</label>
             <span className="text-xs text-muted-foreground ml-auto">{nickname.length}/20</span>
           </div>
           <Input
             value={nickname}
             onChange={(e) => setNickname(e.target.value.slice(0, 20))}
-            placeholder="Choose a nickname..."
+            placeholder={t('profile.nickname.placeholder')}
             disabled={isLoading}
             data-testid="input-nickname"
             maxLength={20}
@@ -99,7 +103,7 @@ export function InterestsSelector({ onSelect, isLoading = false }: InterestsSele
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-semibold mb-2 block">Gender</label>
+            <label className="text-sm font-semibold mb-2 block">{t('profile.gender')}</label>
             <select
               value={gender}
               onChange={(e) => setGender(e.target.value)}
@@ -107,15 +111,15 @@ export function InterestsSelector({ onSelect, isLoading = false }: InterestsSele
               className="w-full px-3 py-2 border border-input rounded-md text-sm bg-background hover-elevate transition-all"
               data-testid="select-gender"
             >
-              <option value="">Select gender</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
+              <option value="">{t('profile.gender.select')}</option>
+              <option value="male">{t('profile.gender.male')}</option>
+              <option value="female">{t('profile.gender.female')}</option>
+              <option value="other">{t('profile.gender.other')}</option>
             </select>
           </div>
 
           <div>
-            <label className="text-sm font-semibold mb-2 block">Age</label>
+            <label className="text-sm font-semibold mb-2 block">{t('profile.age')}</label>
             <Input
               type="number"
               value={age}
@@ -136,9 +140,9 @@ export function InterestsSelector({ onSelect, isLoading = false }: InterestsSele
         <div className="flex items-center gap-2">
           <Heart className="w-5 h-5 text-primary" />
           <div>
-            <h3 className="text-lg font-semibold">What are your interests?</h3>
+            <h3 className="text-lg font-semibold">{t('profile.interests')}</h3>
             <p className="text-xs text-muted-foreground mt-1">
-              Pick up to 5 to help us find your people
+              {t('profile.interests.desc')}
             </p>
           </div>
         </div>
@@ -188,7 +192,7 @@ export function InterestsSelector({ onSelect, isLoading = false }: InterestsSele
       {/* Progress Indicator */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Profile completion</span>
+          <span className="text-muted-foreground">{t('profile.complete')}</span>
           <span className="font-semibold">{[nickname, gender, age, selected.length > 0].filter(Boolean).length}/4</span>
         </div>
         <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
@@ -212,16 +216,16 @@ export function InterestsSelector({ onSelect, isLoading = false }: InterestsSele
         {isLoading ? (
           <span className="flex items-center gap-2">
             <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-            Starting...
+            {t('profile.loading')}
           </span>
         ) : (
-          "Start Chatting"
+          t('profile.submit')
         )}
       </Button>
 
       {!isComplete && (
         <p className="text-xs text-muted-foreground text-center">
-          Complete all fields to get started
+          {t('profile.warning')}
         </p>
       )}
     </div>
