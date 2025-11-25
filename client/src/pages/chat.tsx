@@ -595,11 +595,11 @@ export default function Chat() {
         </div>
 
         {/* Mobile Control Buttons */}
-        <div className="lg:hidden flex gap-2 p-4 border-t">
+        <div className="lg:hidden flex gap-2 p-4 border-t flex-wrap">
           <Button
             size="icon"
             variant={isMicOn ? "secondary" : "destructive"}
-            className="flex-1 h-12"
+            className="flex-1 min-w-12 h-12"
             onClick={toggleMic}
             data-testid="button-toggle-mic-mobile"
           >
@@ -608,7 +608,7 @@ export default function Chat() {
           <Button
             size="icon"
             variant={isCameraOn ? "secondary" : "destructive"}
-            className="flex-1 h-12"
+            className="flex-1 min-w-12 h-12"
             onClick={toggleCamera}
             data-testid="button-toggle-camera-mobile"
           >
@@ -617,7 +617,7 @@ export default function Chat() {
           <Button
             size="icon"
             variant="default"
-            className="flex-1 h-12"
+            className="flex-1 min-w-12 h-12"
             onClick={handleSkip}
             data-testid="button-skip-mobile"
           >
@@ -625,8 +625,17 @@ export default function Chat() {
           </Button>
           <Button
             size="icon"
+            variant="outline"
+            className="flex-1 min-w-12 h-12"
+            onClick={handleReportUser}
+            data-testid="button-report-user-mobile"
+          >
+            <Flag className="w-5 h-5" />
+          </Button>
+          <Button
+            size="icon"
             variant="destructive"
-            className="flex-1 h-12"
+            className="flex-1 min-w-12 h-12"
             onClick={handleEndChat}
             data-testid="button-end-chat-mobile"
           >
