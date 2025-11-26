@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { MessageBubble } from "@/components/MessageBubble";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { WaitingScreen } from "@/components/WaitingScreen";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 import {
   Mic,
   MicOff,
@@ -40,6 +41,11 @@ export default function Chat() {
   const [partnerProfile, setPartnerProfile] = useState<UserProfile | null>(null);
   const [partnerMicOn, setPartnerMicOn] = useState(true);
   const [partnerCameraOn, setPartnerCameraOn] = useState(true);
+  const [isServerConnected, setIsServerConnected] = useState(true);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [lastDisconnectTime, setLastDisconnectTime] = useState<number | undefined>();
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef(0);
 
   const wsRef = useRef<WebSocket | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -81,7 +87,7 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const connectWebSocket = () => {
+  const connectWebSocket = (isReconnect = false) => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host || "localhost:5000";
     const wsUrl = `${protocol}//${host}/ws`;
@@ -89,6 +95,18 @@ export default function Chat() {
 
     ws.onopen = () => {
       console.log('WebSocket connected');
+      setIsServerConnected(true);
+      setIsReconnecting(false);
+      reconnectAttemptsRef.current = 0;
+      
+      if (isReconnect) {
+        setLastDisconnectTime(Date.now());
+        toast({
+          title: "Reconnected",
+          description: "Connection to server restored",
+        });
+      }
+      
       ws.send(JSON.stringify({ type: 'find-match' }));
     };
 
@@ -99,15 +117,13 @@ export default function Chat() {
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
-      toast({
-        title: "Connection Error",
-        description: "Unable to connect to the server. Please try again.",
-        variant: "destructive",
-      });
+      setIsServerConnected(false);
+      setIsReconnecting(true);
     };
 
     ws.onclose = (event) => {
       console.log('WebSocket closed', event.code, event.reason);
+      setIsServerConnected(false);
       
       // Show country blocking error
       if (event.code === 4001) {
@@ -139,6 +155,22 @@ export default function Chat() {
       
       if (chatStatus === 'connected') {
         handlePartnerDisconnected();
+      }
+      
+      // Attempt to reconnect with exponential backoff
+      if (!event.wasClean && reconnectAttemptsRef.current < 10) {
+        setIsReconnecting(true);
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current), 10000);
+        reconnectAttemptsRef.current += 1;
+        
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+        }
+        
+        reconnectTimeoutRef.current = setTimeout(() => {
+          console.log(`Attempting to reconnect... (attempt ${reconnectAttemptsRef.current})`);
+          connectWebSocket(true);
+        }, delay);
       }
     };
 
@@ -507,10 +539,18 @@ export default function Chat() {
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
   };
 
   if (chatStatus === 'waiting') {
-    return <WaitingScreen onCancel={handleCancelWaiting} language={language} />;
+    return (
+      <>
+        <ConnectionStatus isConnected={isServerConnected} isReconnecting={isReconnecting} lastDisconnectTime={lastDisconnectTime} />
+        <WaitingScreen onCancel={handleCancelWaiting} language={language} />
+      </>
+    );
   }
 
   return (

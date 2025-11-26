@@ -596,7 +596,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/stats', async (req, res) => {
     const allUsers = Array.from(clients.values());
-    const displayCount = await storage.getDisplayUserCount();
+    const actualCount = allUsers.length;
+    
+    // If fake user count is enabled, use it; otherwise use actual count
+    const fakeSettings = await storage.getFakeUserCountSettings();
+    let displayCount = actualCount;
+    
+    if (fakeSettings.enabled) {
+      const { minUsers, maxUsers } = fakeSettings;
+      displayCount = Math.floor(Math.random() * (maxUsers - minUsers + 1)) + minUsers;
+    }
+    
     const stats: OnlineStats = {
       totalOnline: displayCount,
       waiting: allUsers.filter(c => !c.sessionId).length,
