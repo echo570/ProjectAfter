@@ -1094,7 +1094,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Voice synthesis endpoint
+  // Voice synthesis endpoint - slower speed
   app.post('/api/ai/voice/synthesize', async (req, res) => {
     try {
       const { text } = req.body;
@@ -1107,7 +1107,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(503).json({ error: 'Voice synthesis is not configured' });
       }
 
-      // ElevenLabs API endpoint - using a female voice (Bella)
       const voiceId = 'EXAVITQu4vr4xnSDxMaL'; // Bella - female voice
       
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
@@ -1154,14 +1153,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(503).json({ error: 'Voice transcription is not configured' });
       }
 
-      // Convert base64 to buffer
       const audioBuffer = Buffer.from(audio, 'base64');
-
       const formData = new FormData();
       const blob = new Blob([audioBuffer], { type: 'audio/webm' });
       formData.append('file', blob, 'audio.webm');
-      formData.append('model_id', 'eleven_multilingual_v2');
-      formData.append('language_code', 'en');
+      formData.append('model_id', 'scribe_v2');
 
       const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
         method: 'POST',
