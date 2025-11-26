@@ -356,7 +356,15 @@ export default function Chat() {
         track.enabled = !track.enabled;
       });
       if (audioTracks.length > 0) {
-        setIsMicOn(audioTracks[0].enabled);
+        const newState = audioTracks[0].enabled;
+        setIsMicOn(newState);
+        // Notify partner of mic status
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({
+            type: 'media-state',
+            data: { micEnabled: newState, cameraEnabled: isCameraOn },
+          }));
+        }
       }
     }
   };
@@ -368,7 +376,15 @@ export default function Chat() {
         track.enabled = !track.enabled;
       });
       if (videoTracks.length > 0) {
-        setIsCameraOn(videoTracks[0].enabled);
+        const newState = videoTracks[0].enabled;
+        setIsCameraOn(newState);
+        // Notify partner of camera status
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({
+            type: 'media-state',
+            data: { micEnabled: isMicOn, cameraEnabled: newState },
+          }));
+        }
       }
     }
   };

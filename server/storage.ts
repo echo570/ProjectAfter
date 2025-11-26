@@ -235,6 +235,7 @@ export class MemStorage implements IStorage {
 
   async unbanUser(userId: string): Promise<void> {
     this.bannedUsers.delete(userId);
+    await this.saveSettingsToDisk();
   }
 
   async getBannedUsers(): Promise<BannedUser[]> {
@@ -295,6 +296,7 @@ export class MemStorage implements IStorage {
 
   async unbanIP(ipAddress: string): Promise<void> {
     this.bannedIPs.delete(ipAddress);
+    await this.saveSettingsToDisk();
   }
 
   async getBannedIPs(): Promise<BannedIP[]> {
@@ -474,10 +476,12 @@ export class MemStorage implements IStorage {
       blockedBy: adminId,
     };
     this.blockedCountries.set(countryCode.toUpperCase(), block);
+    await this.saveSettingsToDisk();
   }
 
   async unblockCountry(countryCode: string): Promise<void> {
     this.blockedCountries.delete(countryCode.toUpperCase());
+    await this.saveSettingsToDisk();
   }
 
   async getBlockedCountries(): Promise<BlockedCountry[]> {
