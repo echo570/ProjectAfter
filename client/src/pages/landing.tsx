@@ -234,16 +234,28 @@ export default function Landing() {
                     {isStarting ? t('profile.loading') : t('hero.start')}
                   </Button>
                   {aiEnabled && (
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="text-lg px-12 py-6 h-auto rounded-lg"
-                      onClick={() => setLocation('/ai-chat')}
-                      data-testid="button-ai-chat"
-                    >
-                      <Sparkles className="w-5 h-5 mr-2" />
-                      Chat with AI
-                    </Button>
+                    <>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="text-lg px-12 py-6 h-auto rounded-lg"
+                        onClick={() => setLocation('/ai-chat')}
+                        data-testid="button-ai-chat"
+                      >
+                        <Sparkles className="w-5 h-5 mr-2" />
+                        Chat with AI
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="text-lg px-12 py-6 h-auto rounded-lg"
+                        onClick={() => setLocation('/ai-voice-chat')}
+                        data-testid="button-ai-voice-chat"
+                      >
+                        <MessageCircle className="w-5 h-5 mr-2" />
+                        Voice Chat
+                      </Button>
+                    </>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-4">

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Landing from "@/pages/landing";
 import Chat from "@/pages/chat";
 import AIChat from "@/pages/ai-chat";
+import AIVoiceChat from "@/pages/ai-voice-chat";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import BlockedCountry from "@/pages/blocked-country";
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/chat" component={Chat} />
       <Route path="/ai-chat" component={AIChat} />
+      <Route path="/ai-voice-chat" component={AIVoiceChat} />
       <Route path="/blocked-country" component={BlockedCountry} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
